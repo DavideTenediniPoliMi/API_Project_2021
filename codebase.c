@@ -13,8 +13,8 @@
 # define pc putchar_unlocked
 #endif
 
-// fast IO
-int expect_pos_int() {
+// Fast IO
+int expect_int() {
     char ch;
     int num;
 
@@ -80,7 +80,41 @@ void print_pos_int(int num) {
     }
 }
 
+// Input Parsing
+void expect_graph(int N);
+
+// Program Flow
+void add_graph(int N) {
+    //dynamic allocation of matrix NxN
+
+    expect_graph(N);
+
+    //calculate score
+
+    //update topk if necessary
+}
+
+// Output Formatting
+void print_topK();
+
 int main() {
-    
+    int N, K;
+    char ch;
+
+    N = expect_int();
+    K = expect_int();
+
+    while((ch = expect_char()) != -1) { 
+        if(ch == 'A') {
+            add_graph(N);
+        } else {
+            print_topK();
+
+            while(ch != -1 || ch != '\n') {
+                ch = expect_char();
+            }
+        }
+    }
+
     return 0;
 }
