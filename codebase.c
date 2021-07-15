@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <time.h>
 
 #ifdef _WIN32
 # define gc _getchar_nolock
@@ -44,13 +45,42 @@ int expect_char() {
     return (ch == EOF) ? -1 : ch;
 }
 
-int main() {
-    int a,b;
+void print_pos_int(int num) {
+    int trail0, reversed;
 
-    a = expect_pos_int();
-    b = expect_pos_int();
-    
-    printf("%d", a+b);
+    if(num == 0) {
+        pc('0');
+        return;
+    }
+
+    trail0 = 0;
+    while(num % 10 == 0) {
+        trail0 ++;
+        num /= 10;
+    }
+
+    reversed = 0;
+    while(num >= 10) {
+        reversed = (reversed * 10) + (num % 10);
+        num /= 10;
+    }
+
+    if(num != 0) {
+        pc(num + '0');
+    }
         
+    while(reversed != 0) {
+        pc((reversed % 10) + '0');
+        reversed /= 10;
+    }
+
+    while(trail0 > 0) {
+        pc('0');
+        trail0 --;
+    }
+}
+
+int main() {
+    
     return 0;
 }
