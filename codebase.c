@@ -13,10 +13,10 @@
 #endif
 
 // fast Input-Output
-void ingore_garbage_int();
-void ingore_garbage_char();
+char ingore_garbage_int();
+char ingore_garbage_char();
 int  expect_pos_int();
-char expect_char();
+int expect_char();
 
 int main() {
     int a,b;
@@ -31,39 +31,46 @@ int main() {
 
 // fast INput-OUTput
 
-void ingore_garbage_int() {
+char ingore_garbage_int() {
     char ch;
 
-    while(!isdigit(ch = gc())) {}
-
-    ungetc(ch, stdin);
+    do {
+        ch = gc();
+    } while (ch != EOF && !isdigit(ch));
+    
+    return ch;
 }
 
-void ingore_garbage_char() {
+char ingore_garbage_char() {
     char ch;
 
-    while(!isalpha(ch = gc())) {}
+    do {
+        ch = gc();
+    } while(ch != EOF && !isalpha(ch));
 
-    ungetc(ch, stdin);
+    return ch;
 }
 
 int expect_pos_int() {
     char ch;
     int num;
 
-    ingore_garbage_int();
+    ch = ingore_garbage_int();
 
     num = 0;
-    while(isdigit(ch = gc())) {
+    do {
         num = num * 10 + (ch - '0');
-    }
+        ch = gc();
+    } while(isdigit(ch));
     ungetc(ch, stdin);
 
     return num;
 }
 
-char expect_char() {
-    ingore_garbage_char();
+int expect_char() {
+    char ch;
 
-    return gc();
+    ch = ingore_garbage_char();
+
+    return (ch == EOF) ? -1 : ch;
 }
