@@ -2,16 +2,30 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define MAX_DIG 32
+#ifdef _WIN32
+# define gc _getchar_nolock
+# define pc _putchar_nolock
+#endif
 
-// fast INput-OUTput
+#ifdef linux
+# define gc getchar_unlocked
+# define pc putchar_unlocked
+#endif
+
+// fast Input-Output
 void ingore_garbage_int();
 void ingore_garbage_char();
 int  expect_pos_int();
 char expect_char();
 
 int main() {
+    int a,b;
 
+    a = expect_pos_int();
+    b = expect_pos_int();
+    
+    printf("%d", a+b);
+        
     return 0;
 }
 
@@ -20,7 +34,7 @@ int main() {
 void ingore_garbage_int() {
     char ch;
 
-    while(!isdigit(ch = getchar())) {}
+    while(!isdigit(ch = gc())) {}
 
     ungetc(ch, stdin);
 }
@@ -28,35 +42,22 @@ void ingore_garbage_int() {
 void ingore_garbage_char() {
     char ch;
 
-    while(!isalpha(ch = getchar())) {}
+    while(!isalpha(ch = gc())) {}
 
     ungetc(ch, stdin);
 }
 
 int expect_pos_int() {
-    char digits[MAX_DIG], ch;
-    int i, num, pow10;
+    char ch;
+    int num;
 
     ingore_garbage_int();
-    
-    i = 0;
-    while(isdigit(ch = getchar()) && i < MAX_DIG) {
-        digits[i] = ch;
-        i++;
-    }
-    ungetc(ch, stdin);
-
-    if(i == 0) {
-        return -1;
-    }
 
     num = 0;
-    pow10 = 1;
-    i--;
-
-    for(; i >= 0 ; i-- , pow10 *= 10) {
-        num += ((digits[i] - '0') * pow10);
+    while(isdigit(ch = gc())) {
+        num = num * 10 + (ch - '0');
     }
+    ungetc(ch, stdin);
 
     return num;
 }
@@ -64,5 +65,5 @@ int expect_pos_int() {
 char expect_char() {
     ingore_garbage_char();
 
-    return getchar();
+    return gc();
 }
