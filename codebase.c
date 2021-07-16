@@ -3,14 +3,14 @@
 #include <ctype.h>
 #include <time.h>
 
-#ifdef _WIN32
-# define gc _getchar_nolock
-# define pc _putchar_nolock
+#ifdef  _WIN32
+#define gc _getchar_nolock
+#define pc _putchar_nolock
 #endif
 
-#ifdef linux
-# define gc getchar_unlocked
-# define pc putchar_unlocked
+#ifdef  linux
+#define gc getchar_unlocked
+#define pc putchar_unlocked
 #endif
 
 // Fast IO
@@ -45,8 +45,9 @@ int expect_char() {
     return (ch == EOF) ? -1 : ch;
 }
 
-void print_pos_int(int num) {
-    int trail0, reversed;
+void print_int(const int n) {
+    int trail0, reversed, num;
+    num = n;
 
     if(num == 0) {
         pc('0');
@@ -81,21 +82,54 @@ void print_pos_int(int num) {
 }
 
 // Input Parsing
-void expect_graph(int N);
+void expect_graph(const int N, int *adj_matrix) {
+    int i, j, weight;
+
+    for(i = 0; i < N; i++) {
+        for(j = 0; j < N; j++) {
+            weight = expect_int();
+
+            adj_matrix[(i * N) + j] = weight;
+        }
+    }
+}
+
+// Min-Heap
+
+// Implicit Heap // Bounded Min-Heap
+
+// Graph Scoring
 
 // Program Flow
-void add_graph(int N) {
-    //dynamic allocation of matrix NxN
+void add_graph(const int N) {
+    int *adj_matrix = (int *)malloc(N * N * sizeof(int));
+    
+    expect_graph(N, adj_matrix);
+    
+    //calculate graph score
 
-    expect_graph(N);
+    //update topk 
 
-    //calculate score
-
-    //update topk if necessary
+    free(adj_matrix);
 }
 
 // Output Formatting
-void print_topK();
+void print_topK(const int K, const int *topK) {
+    int i;
+
+    if(K == 0) {
+        pc('\n');
+        return;
+    }
+
+    for(i = 0; i < K - 1; i++) {
+        print_int(topK[i]);
+        pc(' ');
+    }
+
+    print_int(topK[K - 1]);
+    pc('\n');
+}
 
 int main() {
     int N, K;
@@ -108,13 +142,13 @@ int main() {
         if(ch == 'A') {
             add_graph(N);
         } else {
-            print_topK();
-
-            while(ch != -1 || ch != '\n') {
+            //print_topK(K);
+            print_int(K);
+            while(ch != -1 && ch != '\n') {
                 ch = expect_char();
             }
         }
     }
-
+    
     return 0;
 }
