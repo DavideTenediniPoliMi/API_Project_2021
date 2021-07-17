@@ -1,103 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
-#include <time.h>
 
 #define ui unsigned int
 
-#ifdef  _WIN32
-#define gc _getchar_nolock
-#define pc _putchar_nolock
-#endif
-
-#ifdef  linux
-#define gc getchar_unlocked
-#define pc putchar_unlocked
-#endif
-
-// Fast IO
-int expect_int() {
-    char ch;
-    ui num;
-
-    do {
-        ch = gc();
-    } while (ch != EOF && !isdigit(ch));
-
-    if(ch == EOF) {
-        return -1;
-    }
-
-    num = 0;
-    do {
-        num = num * 10 + (ch - '0');
-        ch = gc();
-    } while(isdigit(ch));
-
-    return num;
-}
-
-int expect_char() {
-    char ch;
-
-    do {
-        ch = gc();
-    } while(ch != EOF && !isalpha(ch));
-
-    return (ch == EOF) ? -1 : ch;
-}
-
-void print_int(const ui n) {
-    ui trail0, reversed;
-    ui num;
-    num = n;
-
-    if(num == 0) {
-        pc('0');
-        return;
-    }
-
-    trail0 = 0;
-    while(num % 10 == 0) {
-        trail0 ++;
-        num /= 10;
-    }
-
-    reversed = 0;
-    while(num >= 10) {
-        reversed = (reversed * 10) + (num % 10);
-        num /= 10;
-    }
-
-    if(num != 0) {
-        pc(num + '0');
-    }
-        
-    while(reversed != 0) {
-        pc((reversed % 10) + '0');
-        reversed /= 10;
-    }
-
-    while(trail0 > 0) {
-        pc('0');
-        trail0 --;
-    }
-}
-
-// Input Parsing
-void expect_graph(const ui N, ui *adj_matrix) {
-    ui i, j, weight;
-
-    for(i = 0; i < N; i ++) {
-        for(j = 0; j < N; j ++) {
-            weight = expect_int();
-
-            adj_matrix[(i * N) + j] = weight;
-        }
-    }
-}
-
-// Min-Heap
 typedef struct t_node{
     ui index;
     ui value;   
@@ -222,59 +127,31 @@ void pop(min_priority_queue *min_pq) {
     sink(0, min_pq);
 }
 
-// Implicit Heap // Bounded Min-Heap
-
-// Graph Scoring
-
-// Program Flow
-void add_graph(const ui N) {
-    ui *adj_matrix = (ui *)malloc(N * N * sizeof(ui));
-    
-    expect_graph(N, adj_matrix);
-    
-    //calculate graph score
-
-    //update topk 
-
-    free(adj_matrix);
-}
-
-// Output Formatting
-void print_topK(const ui K, const ui *topK) {
-    ui i;
-
-    if(K == 0) {
-        pc('\n');
-        return;
-    }
-
-    for(i = 0; i < K - 1; i ++) {
-        print_int(topK[i]);
-        pc(' ');
-    }
-
-    print_int(topK[K - 1]);
-    pc('\n');
-}
-
 int main() {
-    ui N, K;
-    char ch;
+    min_priority_queue * mpq = (min_priority_queue *)malloc(sizeof(min_priority_queue));
+    node *n;
 
-    N = expect_int();
-    K = expect_int();
+    init_min_heap(5, mpq);
 
-    while((ch = expect_char()) != -1) { 
-        if(ch == 'A') {
-            add_graph(N);
-        } else {
-            //print_topK(K);
-            print_int(K);
-            while(ch != -1 && ch != '\n') {
-                ch = expect_char();
-            }
-        }
-    }
-    
-    return 0;
+    push(0, 5, mpq);
+    n = peek(mpq);
+    printf("%d %d\n", n->index, n->value);
+    push(1, 7, mpq);
+    n = peek(mpq);
+    printf("%d %d\n", n->index, n->value);
+    push(2, 1, mpq);
+    n = peek(mpq);
+    printf("%d %d\n", n->index, n->value);
+    push(3, 1, mpq);
+    n = peek(mpq);
+    printf("%d %d\n", n->index, n->value);
+    push(4, 5, mpq);
+    n = peek(mpq);
+    printf("%d %d\n", n->index, n->value);
+    push(5, 324, mpq);
+    n = peek(mpq);
+    printf("%d %d\n", n->index, n->value);
+
+    destroy_min_heap(mpq);
+    free (mpq);
 }
