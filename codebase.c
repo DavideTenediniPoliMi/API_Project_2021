@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+//#include <inttypes.h>
 #include <time.h>
 
 #define ui unsigned int
@@ -101,13 +102,13 @@ void expect_graph(const ui N, ui *adj_matrix) {
 typedef struct t_node{
     ui   index;
     ulli priority;   
-}node;
+} node;
 
 typedef struct min_heap{
     ui capacity;
     ui size;
     node *heap;
-}min_priority_queue;
+} min_priority_queue;
 
 void init_min_pq(const ui capacity, min_priority_queue *min_pq) {
     min_pq->capacity = capacity;
@@ -133,7 +134,7 @@ void destroy_min_pq(min_priority_queue *min_pq) {
     free(min_pq->heap);
 }
 
-ui is_empty_min_pq(min_priority_queue *min_pq) {
+ui is_empty_min_pq(const min_priority_queue *min_pq) {
     return min_pq->size == 0;
 }
 
@@ -230,58 +231,179 @@ void pop_min_pq(min_priority_queue *min_pq) {
 }
 
 // Implicit Heap // Bounded Min-Heap
+typedef struct bounded_max_heap {
+    ui bound;
+    ui size;
+    node *heap;
+} bounded_max_priority_queue;
+
+void init_b_max_pq(const ui bound, bounded_max_priority_queue * b_max_pq) {
+    b_max_pq->bound = bound;
+    b_max_pq->size = 0;
+    b_max_pq->heap = (node *)malloc(bound * sizeof(node));
+}
+
+void destroy_b_max_pq(bounded_max_priority_queue * b_max_pq) {
+    free(b_max_pq->heap);
+}
+
+ui is_empty_b_max_pq(const bounded_max_priority_queue *b_max_pq) {
+    return b_max_pq->size == 0;
+}
+
+ui sink_b_max_pq(ui i, bounded_max_priority_queue *b_max_pq) {
+    ui position, left, right;
+
+    position = i;
+    left = i * 2 + 1;
+    right = i * 2 + 2;
+
+    if(left < b_max_pq->size && b_max_pq->heap[left].priority > b_max_pq->heap[position].priority) {
+        position = left;
+    }
+
+    if(right < b_max_pq->size && b_max_pq->heap[right].priority > b_max_pq->heap[position].priority) {
+        position = right;
+    }
+
+    if(position != i) {
+        node tmp;
+
+        tmp = b_max_pq->heap[position];
+        b_max_pq->heap[position] = b_max_pq->heap[i];
+        b_max_pq->heap[i] = tmp;
+    }
+
+    return position;
+}
+
+ui swim_b_max_pq(const ui i, bounded_max_priority_queue *b_max_pq) {
+    ui parent;
+
+    if(i == 0) {
+        return i;
+    }
+    parent = (i - 1) / 2;
+
+    if(b_max_pq->heap[parent].priority <= b_max_pq->heap[i].priority) {
+        node tmp;
+
+        tmp = b_max_pq->heap[parent];
+        b_max_pq->heap[parent] = b_max_pq->heap[i];
+        b_max_pq->heap[i] = tmp;
+        
+        return parent;
+    }
+
+    return i;
+}
+
+void push_b_max_pq(const ui index, const ui priority, bounded_max_priority_queue *b_max_pq) {
+    ui from, to;
+
+    if(b_max_pq->size == b_max_pq->bound) {
+        if(b_max_pq->heap[0].priority <= priority) {
+            return;
+        }
+
+        to = 0;
+        b_max_pq->heap[0].index = index;
+        b_max_pq->heap[0].priority = priority;
+
+        do {
+            from = to;
+            to = sink_b_max_pq(from, b_max_pq);
+        } while (from != to);
+
+        return;
+    }
+
+    b_max_pq->heap[b_max_pq->size].index = index;
+    b_max_pq->heap[b_max_pq->size].priority = priority;
+    to = b_max_pq->size;
+    b_max_pq->size ++;
+
+    do {
+        from = to;
+        to = swim_b_max_pq(from, b_max_pq);
+    } while(from != to);
+}
 
 // Graph Scoring
 
 // Program Flow
-void add_graph(const ui N) {
-    ui *adj_matrix = (ui *)malloc(N * N * sizeof(ui));
-    
-    expect_graph(N, adj_matrix);
-    
-    //calculate graph score
+void add_graph(const ui N, const ui index, bounded_max_priority_queue *b_max_pq) {
+    ui *adj_matrix = (ui *)malloc(N * N * sizeof(ui));  
+    ulli score;
 
-    //update topk 
+    expect_graph(N, adj_matrix);
+
+    //calculate graph score
+    score = index * N;
+
+    push_b_max_pq(index, score, b_max_pq);
 
     free(adj_matrix);
 }
 
 // Output Formatting
-void print_topK(const ui K, const ui *topK) {
+void print_topK(bounded_max_priority_queue *b_max_pq) {
     ui i;
 
-    if(K == 0) {
+    if(b_max_pq->size == 0) {
         pc('\n');
         return;
     }
 
-    for(i = 0; i < K - 1; i ++) {
-        print_int(topK[i]);
+    for(i = 0; i < b_max_pq->size - 1; i ++) {
+        print_int(b_max_pq->heap[i].index);
         pc(' ');
     }
 
-    print_int(topK[K - 1]);
+    print_int(b_max_pq->heap[b_max_pq->size - 1].index);
     pc('\n');
 }
 
+//Debug
+// void print_state_heap(const ui size, const node *heap) {
+//     ui i;
+
+//     printf("Size: %d\n",size);
+//     if(size == 0) {
+//         printf("Empty\n");
+//     }else {
+//         for(i = 0; i < size; i ++) {
+//             printf("#%d {%d, %"PRIu64"}\n", i, heap[i].index, heap[i].priority);
+//         }
+//     }
+//     printf("\n");
+// }
+
 int main() {
-    ui N, K;
+    bounded_max_priority_queue *b_max_pq;
+    ui N, K, index;
     char ch;
 
+    index = 0;
     N = expect_int();
     K = expect_int();
+    b_max_pq = (bounded_max_priority_queue *)malloc(sizeof(bounded_max_priority_queue));
+    init_b_max_pq(K, b_max_pq);
 
     while((ch = expect_char()) != -1) { 
         if(ch == 'A') {
-            add_graph(N);
+            add_graph(N, index, b_max_pq);
+            index ++;
         } else {
-            //print_topK(K);
-            print_int(K);
+            print_topK(b_max_pq);
+
             while(ch != -1 && ch != '\n') {
                 ch = expect_char();
             }
         }
     }
-    
+
+    destroy_b_max_pq(b_max_pq);
+    free(b_max_pq);
     return 0;
 }

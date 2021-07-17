@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 #define ui unsigned int
 #define ulli unsigned long long int
@@ -7,13 +8,13 @@
 typedef struct t_node{
     ui   index;
     ulli priority;   
-}node;
+} node;
 
 typedef struct min_heap{
     ui capacity;
     ui size;
     node *heap;
-}min_priority_queue;
+} min_priority_queue;
 
 void init_min_pq(const ui capacity, min_priority_queue *min_pq) {
     min_pq->capacity = capacity;
@@ -39,7 +40,7 @@ void destroy_min_pq(min_priority_queue *min_pq) {
     free(min_pq->heap);
 }
 
-ui is_empty_min_pq(min_priority_queue *min_pq) {
+ui is_empty_min_pq(const min_priority_queue *min_pq) {
     return min_pq->size == 0;
 }
 
