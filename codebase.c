@@ -4,6 +4,7 @@
 //#include <inttypes.h>
 #include <time.h>
 
+#define INTMAX 4294967295
 #define ui unsigned int
 #define ulli unsigned long long int
 
@@ -330,6 +331,58 @@ void push_b_max_pq(const ui index, const ui priority, bounded_max_priority_queue
 }
 
 // Graph Scoring
+void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances) {
+    min_priority_queue *min_pq;
+    ui i;
+
+    min_pq = (min_priority_queue *)malloc(sizeof(min_priority_queue));
+    init_min_pq(N, min_pq);
+
+    distances[0] = 0;
+    for(i = 1; i < N; i ++) {
+        distances[i] = INTMAX;
+    }
+
+    push_min_pq(0, 0, min_pq);
+
+    while(!is_empty_min_pq(min_pq)) {
+        ui curr_node, weight;
+        curr_node = peek_min_pq(min_pq);
+        pop_min_pq(min_pq);
+
+        for (i = 0; i < N; i ++) {
+            weight = adj_matrix[(curr_node * N) + i];
+            
+            if(weight != 0 && distances[i] > distances[curr_node] + weight) {
+                distances[i] = distances[curr_node] + weight;
+                push_min_pq(i, distances[i], min_pq);
+            }
+        }
+    }
+
+    destroy_min_pq(min_pq);
+    free(min_pq);
+}
+
+ulli compute_score(const ui N, const ui* adj_matrix) {
+    ulli *distances;
+    ulli score;
+    ui i;
+
+    distances = (ulli *)malloc(N * sizeof(ulli));
+
+    find_shortest_paths(N, adj_matrix, distances);
+
+    score = 0;
+    for(i = 0; i < N; i ++) {
+        if(distances[i] != INTMAX) {
+            score += distances[i];  
+        }
+    }
+
+    free(distances);
+    return score;
+}
 
 // Program Flow
 void add_graph(const ui N, const ui index, bounded_max_priority_queue *b_max_pq) {
@@ -338,8 +391,7 @@ void add_graph(const ui N, const ui index, bounded_max_priority_queue *b_max_pq)
 
     expect_graph(N, adj_matrix);
 
-    //calculate graph score
-    score = index * N;
+    score = compute_score(N, adj_matrix);
 
     push_b_max_pq(index, score, b_max_pq);
 
@@ -364,21 +416,6 @@ void print_topK(bounded_max_priority_queue *b_max_pq) {
     pc('\n');
 }
 
-//Debug
-// void print_state_heap(const ui size, const node *heap) {
-//     ui i;
-
-//     printf("Size: %d\n",size);
-//     if(size == 0) {
-//         printf("Empty\n");
-//     }else {
-//         for(i = 0; i < size; i ++) {
-//             printf("#%d {%d, %"PRIu64"}\n", i, heap[i].index, heap[i].priority);
-//         }
-//     }
-//     printf("\n");
-// }
-
 int main() {
     bounded_max_priority_queue *b_max_pq;
     ui N, K, index;
@@ -394,12 +431,13 @@ int main() {
         if(ch == 'A') {
             add_graph(N, index, b_max_pq);
             index ++;
-        } else {
+        } else {            
             print_topK(b_max_pq);
 
-            while(ch != -1 && ch != '\n') {
-                ch = expect_char();
-            }
+            gc();
+            gc();
+            gc();
+            gc();
         }
     }
 
