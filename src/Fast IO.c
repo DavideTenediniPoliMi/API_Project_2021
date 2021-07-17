@@ -35,8 +35,7 @@ int expect_char() {
 }
 
 void print_int(const ui n) {
-    ui trail0, reversed;
-    ui num;
+    ui trail0, reversed, num;
     num = n;
 
     if(num == 0) {

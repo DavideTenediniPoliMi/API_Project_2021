@@ -2,10 +2,11 @@
 #include <stdio.h>
 
 #define ui unsigned int
+#define ulli unsigned long long int
 
 typedef struct t_node{
-    ui index;
-    ui value;   
+    ui   index;
+    ulli priority;   
 }node;
 
 typedef struct min_heap{
@@ -14,13 +15,13 @@ typedef struct min_heap{
     node *heap;
 }min_priority_queue;
 
-void init_min_heap(const ui capacity, min_priority_queue *min_pq) {
+void init_min_pq(const ui capacity, min_priority_queue *min_pq) {
     min_pq->capacity = capacity;
     min_pq->size = 0;
     min_pq->heap = (node *)malloc(min_pq->capacity * sizeof(node));
 }
 
-void resize(min_priority_queue *min_pq) {
+void resize_min_pq(min_priority_queue *min_pq) {
     ui i;
 
     min_pq->capacity *= 2;
@@ -34,30 +35,30 @@ void resize(min_priority_queue *min_pq) {
     min_pq->heap = tmp;
 }
 
-void destroy_min_heap(min_priority_queue *min_pq) {
+void destroy_min_pq(min_priority_queue *min_pq) {
     free(min_pq->heap);
 }
 
-node* peek(const min_priority_queue *min_pq) {
-    if(min_pq->size == 0) {
-        return NULL;
-    }
-
-    return &(min_pq->heap[0]);
+ui is_empty_min_pq(min_priority_queue *min_pq) {
+    return min_pq->size == 0;
 }
 
-ui sink(const ui i, min_priority_queue *min_pq) {
+ui peek_min_pq(const min_priority_queue *min_pq) {
+    return min_pq->heap[0].index;
+}
+
+ui sink_min_pq(const ui i, min_priority_queue *min_pq) {
     ui position, left, right;
 
     position = i;
     left = i * 2 + 1;
     right = i * 2 + 2;
 
-    if(left < min_pq->size && min_pq->heap[left].value < min_pq->heap[position].value) {
+    if(left < min_pq->size && min_pq->heap[left].priority < min_pq->heap[position].priority) {
         position = left;
     }
 
-    if(right < min_pq->size && min_pq->heap[right].value < min_pq->heap[position].value) {
+    if(right < min_pq->size && min_pq->heap[right].priority < min_pq->heap[position].priority) {
         position = right;
     }
 
@@ -72,7 +73,7 @@ ui sink(const ui i, min_priority_queue *min_pq) {
     return position;
 }
 
-ui swim(const ui i, min_priority_queue *min_pq) {
+ui swim_min_pq(const ui i, min_priority_queue *min_pq) {
     ui parent;
 
     if(i == 0) {
@@ -80,7 +81,7 @@ ui swim(const ui i, min_priority_queue *min_pq) {
     }
     parent = (i - 1) / 2;
 
-    if(min_pq->heap[parent].value > min_pq->heap[i].value) {
+    if(min_pq->heap[parent].priority > min_pq->heap[i].priority) {
         node tmp;
 
         tmp = min_pq->heap[parent];
@@ -93,27 +94,29 @@ ui swim(const ui i, min_priority_queue *min_pq) {
     return i;
 }
 
-void push(const ui index, const ui value, min_priority_queue *min_pq) {
+void push_min_pq(const ui index, const ui priority, min_priority_queue *min_pq) {
     int from, to;
 
     if(min_pq->size == min_pq->capacity) {
-        resize(min_pq);
+        resize_min_pq(min_pq);
     }
 
     min_pq->heap[min_pq->size].index = index;
-    min_pq->heap[min_pq->size].value = value;
+    min_pq->heap[min_pq->size].priority = priority;
 
     to = min_pq->size;
     min_pq->size ++;
 
     do {
         from = to;
-        to = swim(from, min_pq);
+        to = swim_min_pq(from, min_pq);
     } while(from != to);
 }
 
-void pop(min_priority_queue *min_pq) {
-    if(min_pq->size == 0) {
+void pop_min_pq(min_priority_queue *min_pq) {
+    int from, to;
+
+    if(is_empty_min_pq(min_pq)) {
         return;
     }
 
@@ -124,34 +127,10 @@ void pop(min_priority_queue *min_pq) {
         return;
     }
 
-    sink(0, min_pq);
-}
+    to = 0;
 
-int main() {
-    min_priority_queue * mpq = (min_priority_queue *)malloc(sizeof(min_priority_queue));
-    node *n;
-
-    init_min_heap(5, mpq);
-
-    push(0, 5, mpq);
-    n = peek(mpq);
-    printf("%d %d\n", n->index, n->value);
-    push(1, 7, mpq);
-    n = peek(mpq);
-    printf("%d %d\n", n->index, n->value);
-    push(2, 1, mpq);
-    n = peek(mpq);
-    printf("%d %d\n", n->index, n->value);
-    push(3, 1, mpq);
-    n = peek(mpq);
-    printf("%d %d\n", n->index, n->value);
-    push(4, 5, mpq);
-    n = peek(mpq);
-    printf("%d %d\n", n->index, n->value);
-    push(5, 324, mpq);
-    n = peek(mpq);
-    printf("%d %d\n", n->index, n->value);
-
-    destroy_min_heap(mpq);
-    free (mpq);
+    do {
+        from = to;
+        to = sink_min_pq(from, min_pq);
+    } while(from != to);
 }
