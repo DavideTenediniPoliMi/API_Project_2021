@@ -26,7 +26,7 @@ int expect_int() {
     } while (ch != EOF && !isdigit(ch));
 
     if(ch == EOF) {
-        return -1;
+        return EOF;
     }
 
     num = 0;
@@ -45,7 +45,7 @@ int expect_char() {
         ch = gc();
     } while(ch != EOF && !isalpha(ch));
 
-    return (ch == EOF) ? -1 : ch;
+    return ch;
 }
 
 void print_int(const ui n) {
@@ -424,17 +424,16 @@ int main() {
     b_max_pq = (bounded_max_priority_queue *)malloc(sizeof(bounded_max_priority_queue));
     init_b_max_pq(K, b_max_pq);
 
-    while((ch = expect_char()) != -1) { 
+    while((ch = expect_char()) != EOF) { 
         if(ch == 'A') {
             add_graph(N, index, b_max_pq);
             index ++;
         } else {            
             print_topK(b_max_pq);
 
-            gc();
-            gc();
-            gc();
-            gc();
+            do{
+                ch = gc();
+            }while(ch != '\n' && ch != EOF);
         }
     }
 
