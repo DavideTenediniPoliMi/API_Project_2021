@@ -115,6 +115,10 @@ void init_min_pq(const ui capacity, min_priority_queue *min_pq) {
     min_pq->heap = (node *)malloc(min_pq->capacity * sizeof(node));
 }
 
+void reset_min_pq(min_priority_queue *min_pq) {
+    min_pq->size = 0;
+}
+
 void destroy_min_pq(min_priority_queue *min_pq) {
     free(min_pq->heap);
 }
@@ -315,15 +319,10 @@ void push_b_max_pq(const ui index, const ui priority, bounded_max_priority_queue
 }
 
 // Graph Scoring
-void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances) {
-    min_priority_queue *min_pq;
-    ui *pushed;
+void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances, min_priority_queue *min_pq, ui* pushed) {
     ui i;
 
-    min_pq = (min_priority_queue *)malloc(sizeof(min_priority_queue));
-    pushed = (ui *)malloc(N * sizeof(ui));
-    
-    init_min_pq(N, min_pq);
+    reset_min_pq(min_pq);
 
     distances[0] = 0;
     for(i = 1; i < N; i ++) {
@@ -356,19 +355,14 @@ void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances) {
         }
     }
 
-    destroy_min_pq(min_pq);
-    free(pushed);
-    free(min_pq);
+    
 }
 
-ulli compute_score(const ui N, const ui* adj_matrix) {
-    ulli *distances;
+ulli compute_score(const ui N, const ui* adj_matrix, ulli *distances, min_priority_queue *min_pq, ui *pushed) {
     ulli score;
     ui i;
 
-    distances = (ulli *)malloc(N * sizeof(ulli));
-
-    find_shortest_paths(N, adj_matrix, distances);
+    find_shortest_paths(N, adj_matrix, distances, min_pq, pushed);
 
     score = 0;
     for(i = 0; i < N; i ++) {
@@ -377,22 +371,18 @@ ulli compute_score(const ui N, const ui* adj_matrix) {
         }
     }
 
-    free(distances);
     return score;
 }
 
 // Program Flow
-void add_graph(const ui N, const ui index, bounded_max_priority_queue *b_max_pq) {
-    ui *adj_matrix = (ui *)malloc(N * N * sizeof(ui));  
+void add_graph(const ui N, const ui index, bounded_max_priority_queue *b_max_pq, ui *adj_matrix, ulli *distances, min_priority_queue *min_pq, ui *pushed) {
     ulli score;
 
     expect_graph(N, adj_matrix);
 
-    score = compute_score(N, adj_matrix);
+    score = compute_score(N, adj_matrix, distances, min_pq, pushed);
 
     push_b_max_pq(index, score, b_max_pq);
-
-    free(adj_matrix);
 }
 
 // Output Formatting
@@ -415,18 +405,29 @@ void print_topK(bounded_max_priority_queue *b_max_pq) {
 
 int main() {
     bounded_max_priority_queue *b_max_pq;
+    min_priority_queue *min_pq;
+    ui *pushed;
+    ui *adj_matrix;
+    ulli *distances;
     ui N, K, index;
     char ch;
 
     index = 0;
     N = expect_int();
     K = expect_int();
+    
     b_max_pq = (bounded_max_priority_queue *)malloc(sizeof(bounded_max_priority_queue));
-    init_b_max_pq(K, b_max_pq);
+    min_pq = (min_priority_queue *)malloc(sizeof(min_priority_queue));
+    pushed = (ui *)malloc(N * sizeof(ui));
+    adj_matrix = (ui *)malloc(N * N * sizeof(ui));
+    distances = (ulli *)malloc(N * sizeof(ulli));
 
+    init_b_max_pq(K, b_max_pq);
+    init_min_pq(N, min_pq);
+    
     while((ch = expect_char()) != EOF) { 
         if(ch == 'A') {
-            add_graph(N, index, b_max_pq);
+            add_graph(N, index, b_max_pq, adj_matrix, distances, min_pq, pushed);
             index ++;
         } else {            
             print_topK(b_max_pq);
@@ -438,6 +439,11 @@ int main() {
     }
 
     destroy_b_max_pq(b_max_pq);
+    destroy_min_pq(min_pq);
+    free(min_pq);
     free(b_max_pq);
+    free(pushed);
+    free(adj_matrix);
+    free(distances);
     return 0;
 }
