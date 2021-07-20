@@ -3,6 +3,7 @@
 #include <ctype.h>
 
 #define ULLIMAX 9223372036854775808ULL
+#define STARTK 10000
 #define ui unsigned int
 #define ulli unsigned long long int
 
@@ -104,34 +105,59 @@ typedef struct t_node{
 } node;
 
 typedef struct heap{
+    ui bound;
     ui capacity;
     ui size;
-    ui (*cmp_fun)(const node *, const node *);
+    int (*cmp_fun)(const node *, const node *);
     node *heap;
 } priority_queue;
 
-ui cmp_fun_min(const node *n1, const node *n2) {
-    return (n1->priority < n2->priority);
+int cmp_fun_min(const node *n1, const node *n2) {
+    return (n2->priority - n1->priority);
 }
 
-ui cmp_fun_max(const node *n1, const node *n2) {
-    return (n1->priority > n2->priority);
+int cmp_fun_max(const node *n1, const node *n2) {
+    return (n1->priority != n2->priority) ? (n1->priority - n2->priority) : -1;
 }
 
-void init_pq(const ui capacity, ui (*cmp_fun)(const node *, const node *), priority_queue *pq) {
+ui min_ui(ui n1, ui n2) {
+    return (n1 < n2) ? n1 : n2;
+}
+
+void init_pq(const ui bound, const ui capacity, int (*cmp_fun)(const node *, const node *), priority_queue *pq) {
+    pq->bound = bound;
     pq->capacity = capacity;
     pq->size = 0;
     pq->cmp_fun = cmp_fun;
     pq->heap = (node *)malloc(pq->capacity * sizeof(node));
 }
 
-void reset_pq(priority_queue *pq) {
-    pq->size = 0;
-} 
-
 void destroy_pq(priority_queue *pq) {
     free(pq->heap);
 }
+
+void resize_pq(priority_queue *pq) {
+    node *tmp;
+    ui i;
+
+    if(pq->size == pq->bound) {
+        return;
+    }
+
+    pq->capacity = min_ui(pq->capacity * 2, pq->bound);
+    tmp = (node *)malloc(pq->capacity * sizeof(node));
+
+    for(i = 0; i < pq->size; i ++) {
+        tmp[i] = pq->heap[i];
+    }
+
+    destroy_pq(pq);
+    pq->heap = tmp;
+}
+
+void reset_pq(priority_queue *pq) {
+    pq->size = 0;
+} 
 
 ui is_empty_pq(const priority_queue *pq) {
     return pq->size == 0;
@@ -148,11 +174,11 @@ ui sink_pq(const ui i, priority_queue *pq) {
     left = i * 2 + 1;
     right = i * 2 + 2;
 
-    if(left < pq->size && pq->cmp_fun(&pq->heap[left], &pq->heap[position])) {
+    if(left < pq->size && pq->cmp_fun(&pq->heap[left], &pq->heap[position]) > 0) {
         position = left;
     }
 
-    if(right < pq->size && pq->cmp_fun(&pq->heap[right], &pq->heap[position])) {
+    if(right < pq->size && pq->cmp_fun(&pq->heap[right], &pq->heap[position]) > 0) {
         position = right;
     }
 
@@ -175,7 +201,7 @@ ui swim_pq(const ui i, priority_queue *pq) {
     }
     parent = (i - 1) / 2;
 
-    if(!pq->cmp_fun(&pq->heap[parent], &pq->heap[i])) {
+    if(pq->cmp_fun(&pq->heap[parent], &pq->heap[i]) < 0) {
         node tmp;
 
         tmp = pq->heap[parent];
@@ -190,6 +216,10 @@ ui swim_pq(const ui i, priority_queue *pq) {
 
 void push_pq(const ui index, const ui priority, priority_queue *pq) {
     ui from, to;
+
+    if(pq->size == pq->capacity) {
+        resize_pq(pq);
+    }
 
     pq->heap[pq->size].index = index;
     pq->heap[pq->size].priority = priority;
@@ -206,7 +236,7 @@ void push_pq(const ui index, const ui priority, priority_queue *pq) {
 void push_bounded_pq(const ui index, const ui priority, priority_queue *bounded_pq) {
     ui from, to;
 
-    if(bounded_pq->size < bounded_pq->capacity) {
+    if(bounded_pq->size < bounded_pq->bound) {
         push_pq(index, priority, bounded_pq);
         return;
     }
@@ -351,8 +381,8 @@ int main() {
     adj_matrix = (ui *)malloc(N * N * sizeof(ui));
     distances = (ulli *)malloc(N * sizeof(ulli));
 
-    init_pq(K, cmp_fun_max, bounded_pq);
-    init_pq(N, cmp_fun_min, min_pq);
+    init_pq(K, min_ui(K , STARTK), cmp_fun_max, bounded_pq);
+    init_pq(N, N / 2, cmp_fun_min, min_pq);
 
     while((ch = expect_char()) != EOF) { 
         if(ch == 'A') {
