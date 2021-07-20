@@ -91,73 +91,83 @@ void expect_graph(const ui N, ui *adj_matrix) {
     for(i = 0; i < N; i ++) {
         for(j = 0; j < N; j ++) {
             weight = expect_int();
-
+            
             adj_matrix[(i * N) + j] = weight;
         }
     }
 }
 
-// Min-Heap
+// Heap
 typedef struct t_node{
     ui   index;
     ulli priority;   
 } node;
 
-typedef struct min_heap{
+typedef struct heap{
     ui capacity;
     ui size;
+    ui (*cmp_fun)(const node *, const node *);
     node *heap;
-} min_priority_queue;
+} priority_queue;
 
-void init_min_pq(const ui capacity, min_priority_queue *min_pq) {
-    min_pq->capacity = capacity;
-    min_pq->size = 0;
-    min_pq->heap = (node *)malloc(min_pq->capacity * sizeof(node));
+ui cmp_fun_min(const node *n1, const node *n2) {
+    return (n1->priority < n2->priority);
 }
 
-void reset_min_pq(min_priority_queue *min_pq) {
-    min_pq->size = 0;
+ui cmp_fun_max(const node *n1, const node *n2) {
+    return (n1->priority > n2->priority);
 }
 
-void destroy_min_pq(min_priority_queue *min_pq) {
-    free(min_pq->heap);
+void init_pq(const ui capacity, ui (*cmp_fun)(const node *, const node *), priority_queue *pq) {
+    pq->capacity = capacity;
+    pq->size = 0;
+    pq->cmp_fun = cmp_fun;
+    pq->heap = (node *)malloc(pq->capacity * sizeof(node));
 }
 
-ui is_empty_min_pq(const min_priority_queue *min_pq) {
-    return min_pq->size == 0;
+void reset_pq(priority_queue *pq) {
+    pq->size = 0;
+} 
+
+void destroy_pq(priority_queue *pq) {
+    free(pq->heap);
 }
 
-ui peek_min_pq(const min_priority_queue *min_pq) {
-    return min_pq->heap[0].index;
+ui is_empty_pq(const priority_queue *pq) {
+    return pq->size == 0;
 }
 
-ui sink_min_pq(const ui i, min_priority_queue *min_pq) {
+ui peek_pq(const priority_queue *pq) {
+    return pq->heap[0].index;
+}
+
+ui sink_pq(const ui i, priority_queue *pq) {
     ui position, left, right;
 
     position = i;
     left = i * 2 + 1;
     right = i * 2 + 2;
 
-    if(left < min_pq->size && min_pq->heap[left].priority < min_pq->heap[position].priority) {
+    if(left < pq->size && pq->cmp_fun(&pq->heap[left], &pq->heap[position])) {
         position = left;
     }
 
-    if(right < min_pq->size && min_pq->heap[right].priority < min_pq->heap[position].priority) {
+    if(right < pq->size && pq->cmp_fun(&pq->heap[right], &pq->heap[position])) {
         position = right;
     }
 
     if(position != i) {
         node tmp;
 
-        tmp = min_pq->heap[position];
-        min_pq->heap[position] = min_pq->heap[i];
-        min_pq->heap[i] = tmp;
+        tmp = pq->heap[position];
+        pq->heap[position] = pq->heap[i];
+        pq->heap[i] = tmp;
     }
 
     return position;
 }
 
-ui swim_min_pq(const ui i, min_priority_queue *min_pq) {
+ui swim_pq(const ui i, priority_queue *pq) {
     ui parent;
 
     if(i == 0) {
@@ -165,12 +175,12 @@ ui swim_min_pq(const ui i, min_priority_queue *min_pq) {
     }
     parent = (i - 1) / 2;
 
-    if(min_pq->heap[parent].priority > min_pq->heap[i].priority) {
+    if(!pq->cmp_fun(&pq->heap[parent], &pq->heap[i])) {
         node tmp;
 
-        tmp = min_pq->heap[parent];
-        min_pq->heap[parent] = min_pq->heap[i];
-        min_pq->heap[i] = tmp;
+        tmp = pq->heap[parent];
+        pq->heap[parent] = pq->heap[i];
+        pq->heap[i] = tmp;
         
         return parent;
     }
@@ -178,36 +188,54 @@ ui swim_min_pq(const ui i, min_priority_queue *min_pq) {
     return i;
 }
 
-void push_min_pq(const ui index, const ulli priority, min_priority_queue *min_pq) {
-    int from, to;
+void push_pq(const ui index, const ui priority, priority_queue *pq) {
+    ui from, to;
 
-    if(min_pq->size == min_pq->capacity) {
-        return;
-    }
+    pq->heap[pq->size].index = index;
+    pq->heap[pq->size].priority = priority;
 
-    min_pq->heap[min_pq->size].index = index;
-    min_pq->heap[min_pq->size].priority = priority;
-
-    to = min_pq->size;
-    min_pq->size ++;
+    to = pq->size;
+    pq->size ++;
 
     do {
         from = to;
-        to = swim_min_pq(from, min_pq);
+        to = swim_pq(from, pq);
     } while(from != to);
 }
 
-void pop_min_pq(min_priority_queue *min_pq) {
-    int from, to;
+void push_bounded_pq(const ui index, const ui priority, priority_queue *bounded_pq) {
+    ui from, to;
 
-    if(is_empty_min_pq(min_pq)) {
+    if(bounded_pq->size < bounded_pq->capacity) {
+        push_pq(index, priority, bounded_pq);
         return;
     }
 
-    min_pq->size --;
-    min_pq->heap[0] = min_pq->heap[min_pq->size];
+    if(bounded_pq->heap[0].priority <= priority) {
+        return;
+    }
 
-    if(min_pq->size <= 1) {
+    to = 0;
+    bounded_pq->heap[0].index = index;
+    bounded_pq->heap[0].priority = priority;
+
+    do {
+        from = to;
+        to = sink_pq(from, bounded_pq);
+    } while (from != to);
+}
+
+void pop_pq(priority_queue *pq) {
+    int from, to;
+
+    if(is_empty_pq(pq)) {
+        return;
+    }
+
+    pq->size --;
+    pq->heap[0] = pq->heap[pq->size];
+
+    if(pq->size <= 1) {
         return;
     }
 
@@ -215,114 +243,15 @@ void pop_min_pq(min_priority_queue *min_pq) {
 
     do {
         from = to;
-        to = sink_min_pq(from, min_pq);
-    } while(from != to);
-}
-
-// Implicit Heap // Bounded Min-Heap
-typedef struct bounded_max_heap {
-    ui bound;
-    ui size;
-    node *heap;
-} bounded_max_priority_queue;
-
-void init_b_max_pq(const ui bound, bounded_max_priority_queue * b_max_pq) {
-    b_max_pq->bound = bound;
-    b_max_pq->size = 0;
-    b_max_pq->heap = (node *)malloc(bound * sizeof(node));
-}
-
-void destroy_b_max_pq(bounded_max_priority_queue * b_max_pq) {
-    free(b_max_pq->heap);
-}
-
-ui is_empty_b_max_pq(const bounded_max_priority_queue *b_max_pq) {
-    return b_max_pq->size == 0;
-}
-
-ui sink_b_max_pq(ui i, bounded_max_priority_queue *b_max_pq) {
-    ui position, left, right;
-
-    position = i;
-    left = i * 2 + 1;
-    right = i * 2 + 2;
-
-    if(left < b_max_pq->size && b_max_pq->heap[left].priority > b_max_pq->heap[position].priority) {
-        position = left;
-    }
-
-    if(right < b_max_pq->size && b_max_pq->heap[right].priority > b_max_pq->heap[position].priority) {
-        position = right;
-    }
-
-    if(position != i) {
-        node tmp;
-
-        tmp = b_max_pq->heap[position];
-        b_max_pq->heap[position] = b_max_pq->heap[i];
-        b_max_pq->heap[i] = tmp;
-    }
-
-    return position;
-}
-
-ui swim_b_max_pq(const ui i, bounded_max_priority_queue *b_max_pq) {
-    ui parent;
-
-    if(i == 0) {
-        return i;
-    }
-    parent = (i - 1) / 2;
-
-    if(b_max_pq->heap[parent].priority <= b_max_pq->heap[i].priority) {
-        node tmp;
-
-        tmp = b_max_pq->heap[parent];
-        b_max_pq->heap[parent] = b_max_pq->heap[i];
-        b_max_pq->heap[i] = tmp;
-        
-        return parent;
-    }
-
-    return i;
-}
-
-void push_b_max_pq(const ui index, const ui priority, bounded_max_priority_queue *b_max_pq) {
-    ui from, to;
-
-    if(b_max_pq->size == b_max_pq->bound) {
-        if(b_max_pq->heap[0].priority <= priority) {
-            return;
-        }
-
-        to = 0;
-        b_max_pq->heap[0].index = index;
-        b_max_pq->heap[0].priority = priority;
-
-        do {
-            from = to;
-            to = sink_b_max_pq(from, b_max_pq);
-        } while (from != to);
-
-        return;
-    }
-
-    b_max_pq->heap[b_max_pq->size].index = index;
-    b_max_pq->heap[b_max_pq->size].priority = priority;
-    to = b_max_pq->size;
-    b_max_pq->size ++;
-
-    do {
-        from = to;
-        to = swim_b_max_pq(from, b_max_pq);
+        to = sink_pq(from, pq);
     } while(from != to);
 }
 
 // Graph Scoring
-void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances, min_priority_queue *min_pq, ui* pushed) {
+void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances, priority_queue *min_pq, ui* pushed) {
     ui i;
 
-    reset_min_pq(min_pq);
+    reset_pq(min_pq);
 
     distances[0] = 0;
     for(i = 1; i < N; i ++) {
@@ -334,13 +263,13 @@ void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances, min_
         pushed[i] = 0;
     }
 
-    push_min_pq(0, 0, min_pq);
+    push_pq(0, 0, min_pq);
 
-    while(!is_empty_min_pq(min_pq)) {
+    while(!is_empty_pq(min_pq)) {
         ui curr_node, weight;
-        curr_node = peek_min_pq(min_pq);
-        pop_min_pq(min_pq);
-        pushed[curr_node] = 0 ;
+        curr_node = peek_pq(min_pq);
+        pop_pq(min_pq);
+        pushed[curr_node] = 0;
 
         for(i = 0; i < N; i ++) {
             weight = adj_matrix[(curr_node * N) + i];
@@ -349,7 +278,7 @@ void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances, min_
                 distances[i] = distances[curr_node] + weight;
                 if(!pushed[i]) {
                     pushed[i] = 1;
-                    push_min_pq(i, distances[i], min_pq);
+                    push_pq(i, distances[i], min_pq);
                 }
             }
         }
@@ -358,7 +287,7 @@ void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances, min_
     
 }
 
-ulli compute_score(const ui N, const ui* adj_matrix, ulli *distances, min_priority_queue *min_pq, ui *pushed) {
+ulli compute_score(const ui N, const ui* adj_matrix, ulli *distances, priority_queue *min_pq, ui *pushed) {
     ulli score;
     ui i;
 
@@ -375,37 +304,37 @@ ulli compute_score(const ui N, const ui* adj_matrix, ulli *distances, min_priori
 }
 
 // Program Flow
-void add_graph(const ui N, const ui index, bounded_max_priority_queue *b_max_pq, ui *adj_matrix, ulli *distances, min_priority_queue *min_pq, ui *pushed) {
+void add_graph(const ui N, const ui index, priority_queue *bounded_pq, ui *adj_matrix, ulli *distances, priority_queue *min_pq, ui *pushed) {
     ulli score;
 
     expect_graph(N, adj_matrix);
 
     score = compute_score(N, adj_matrix, distances, min_pq, pushed);
 
-    push_b_max_pq(index, score, b_max_pq);
+    push_bounded_pq(index, score, bounded_pq);
 }
 
 // Output Formatting
-void print_topK(bounded_max_priority_queue *b_max_pq) {
+void print_topK(priority_queue *bounded_pq) {
     ui i;
 
-    if(b_max_pq->size == 0) {
+    if(bounded_pq->size == 0) {
         pc('\n');
         return;
     }
 
-    for(i = 0; i < b_max_pq->size - 1; i ++) {
-        print_int(b_max_pq->heap[i].index);
+    for(i = 0; i < bounded_pq->size - 1; i ++) {
+        print_int(bounded_pq->heap[i].index);
         pc(' ');
     }
 
-    print_int(b_max_pq->heap[b_max_pq->size - 1].index);
+    print_int(bounded_pq->heap[bounded_pq->size - 1].index);
     pc('\n');
 }
 
 int main() {
-    bounded_max_priority_queue *b_max_pq;
-    min_priority_queue *min_pq;
+    priority_queue *bounded_pq;
+    priority_queue *min_pq;
     ui *pushed;
     ui *adj_matrix;
     ulli *distances;
@@ -416,21 +345,21 @@ int main() {
     N = expect_int();
     K = expect_int();
     
-    b_max_pq = (bounded_max_priority_queue *)malloc(sizeof(bounded_max_priority_queue));
-    min_pq = (min_priority_queue *)malloc(sizeof(min_priority_queue));
+    bounded_pq = (priority_queue *)malloc(sizeof(priority_queue));
+    min_pq = (priority_queue *)malloc(sizeof(priority_queue));
     pushed = (ui *)malloc(N * sizeof(ui));
     adj_matrix = (ui *)malloc(N * N * sizeof(ui));
     distances = (ulli *)malloc(N * sizeof(ulli));
 
-    init_b_max_pq(K, b_max_pq);
-    init_min_pq(N, min_pq);
-    
+    init_pq(K, cmp_fun_max, bounded_pq);
+    init_pq(N, cmp_fun_min, min_pq);
+
     while((ch = expect_char()) != EOF) { 
         if(ch == 'A') {
-            add_graph(N, index, b_max_pq, adj_matrix, distances, min_pq, pushed);
+            add_graph(N, index, bounded_pq, adj_matrix, distances, min_pq, pushed);
             index ++;
         } else {            
-            print_topK(b_max_pq);
+            print_topK(bounded_pq);
 
             do{
                 ch = gc();
@@ -438,10 +367,10 @@ int main() {
         }
     }
 
-    destroy_b_max_pq(b_max_pq);
-    destroy_min_pq(min_pq);
+    destroy_pq(bounded_pq);
+    destroy_pq(min_pq);
     free(min_pq);
-    free(b_max_pq);
+    free(bounded_pq);
     free(pushed);
     free(adj_matrix);
     free(distances);
