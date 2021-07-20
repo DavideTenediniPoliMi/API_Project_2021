@@ -1,10 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-//#include <inttypes.h>
-#include <time.h>
 
-#define INTMAX 4294967295
+#define ULLIMAX 9223372036854775808ULL
 #define ui unsigned int
 #define ulli unsigned long long int
 
@@ -117,20 +115,6 @@ void init_min_pq(const ui capacity, min_priority_queue *min_pq) {
     min_pq->heap = (node *)malloc(min_pq->capacity * sizeof(node));
 }
 
-void resize_min_pq(min_priority_queue *min_pq) {
-    ui i;
-
-    min_pq->capacity *= 2;
-    node * tmp = (node *)malloc(min_pq->capacity * sizeof(node));
-     
-    for(i = 0; i < min_pq->size; i ++) {
-        tmp[i] = min_pq->heap[i];
-    }
-
-    free(min_pq->heap);
-    min_pq->heap = tmp;
-}
-
 void destroy_min_pq(min_priority_queue *min_pq) {
     free(min_pq->heap);
 }
@@ -194,7 +178,7 @@ void push_min_pq(const ui index, const ulli priority, min_priority_queue *min_pq
     int from, to;
 
     if(min_pq->size == min_pq->capacity) {
-        resize_min_pq(min_pq);
+        return;
     }
 
     min_pq->heap[min_pq->size].index = index;
@@ -333,14 +317,22 @@ void push_b_max_pq(const ui index, const ui priority, bounded_max_priority_queue
 // Graph Scoring
 void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances) {
     min_priority_queue *min_pq;
+    ui *pushed;
     ui i;
 
     min_pq = (min_priority_queue *)malloc(sizeof(min_priority_queue));
+    pushed = (ui *)malloc(N * sizeof(ui));
+    
     init_min_pq(N, min_pq);
 
     distances[0] = 0;
     for(i = 1; i < N; i ++) {
-        distances[i] = INTMAX;
+        distances[i] = ULLIMAX;
+    }
+
+    pushed[0] = 1;
+    for(i = 1; i < N; i ++) {
+        pushed[i] = 0;
     }
 
     push_min_pq(0, 0, min_pq);
@@ -349,18 +341,23 @@ void find_shortest_paths(const ui N, const ui *adj_matrix, ulli *distances) {
         ui curr_node, weight;
         curr_node = peek_min_pq(min_pq);
         pop_min_pq(min_pq);
+        pushed[curr_node] = 0 ;
 
-        for (i = 0; i < N; i ++) {
+        for(i = 0; i < N; i ++) {
             weight = adj_matrix[(curr_node * N) + i];
             
             if(weight != 0 && distances[i] > distances[curr_node] + weight) {
                 distances[i] = distances[curr_node] + weight;
-                push_min_pq(i, distances[i], min_pq);
+                if(!pushed[i]) {
+                    pushed[i] = 1;
+                    push_min_pq(i, distances[i], min_pq);
+                }
             }
         }
     }
 
     destroy_min_pq(min_pq);
+    free(pushed);
     free(min_pq);
 }
 
@@ -375,7 +372,7 @@ ulli compute_score(const ui N, const ui* adj_matrix) {
 
     score = 0;
     for(i = 0; i < N; i ++) {
-        if(distances[i] != INTMAX) {
+        if(distances[i] != ULLIMAX) {
             score += distances[i];  
         }
     }
