@@ -13,7 +13,7 @@
 #define pc putchar_unlocked
 #endif
 
-int expect_int() {
+int expect_ui() {
     char ch;
     ui num;
 
@@ -44,7 +44,7 @@ int expect_char() {
     return ch;
 }
 
-void print_int(const ui n) {
+void print_ui(const ui n) {
     ui trail0, reversed, num;
     num = n;
 

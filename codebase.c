@@ -18,7 +18,7 @@
 #endif
 
 // Fast IO
-int expect_int() {
+int expect_ui() {
     char ch;
     ui num;
 
@@ -49,7 +49,7 @@ int expect_char() {
     return ch;
 }
 
-void print_int(const ui n) {
+void print_ui(const ui n) {
     ui trail0, reversed, num;
     num = n;
 
@@ -91,7 +91,7 @@ void expect_graph(const ui N, ui *adj_matrix) {
 
     for(i = 0; i < N; i ++) {
         for(j = 0; j < N; j ++) {
-            weight = expect_int();
+            weight = expect_ui();
             
             adj_matrix[(i * N) + j] = weight;
         }
@@ -163,8 +163,8 @@ ui is_empty_pq(const priority_queue *pq) {
     return pq->size == 0;
 }
 
-ui peek_pq(const priority_queue *pq) {
-    return pq->heap[0].index;
+int peek_pq(const priority_queue *pq) {
+    return (is_empty_pq(pq)) ? -1 : pq->heap[0].index;
 }
 
 ui sink_pq(const ui i, priority_queue *pq) {
@@ -216,6 +216,10 @@ ui swim_pq(const ui i, priority_queue *pq) {
 
 void push_pq(const ui index, const ui priority, priority_queue *pq) {
     ui from, to;
+    
+    if(pq->size == pq->bound) {
+        return;
+    }
 
     if(pq->size == pq->capacity) {
         resize_pq(pq);
@@ -354,11 +358,11 @@ void print_topK(priority_queue *bounded_pq) {
     }
 
     for(i = 0; i < bounded_pq->size - 1; i ++) {
-        print_int(bounded_pq->heap[i].index);
+        print_ui(bounded_pq->heap[i].index);
         pc(' ');
     }
 
-    print_int(bounded_pq->heap[bounded_pq->size - 1].index);
+    print_ui(bounded_pq->heap[bounded_pq->size - 1].index);
     pc('\n');
 }
 
@@ -372,8 +376,8 @@ int main() {
     char ch;
 
     index = 0;
-    N = expect_int();
-    K = expect_int();
+    N = expect_ui();
+    K = expect_ui();
     
     bounded_pq = (priority_queue *)malloc(sizeof(priority_queue));
     min_pq = (priority_queue *)malloc(sizeof(priority_queue));

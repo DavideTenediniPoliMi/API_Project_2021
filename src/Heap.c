@@ -68,8 +68,8 @@ ui is_empty_pq(const priority_queue *pq) {
     return pq->size == 0;
 }
 
-ui peek_pq(const priority_queue *pq) {
-    return pq->heap[0].index;
+int peek_pq(const priority_queue *pq) {
+    return (is_empty_pq(pq)) ? -1 : pq->heap[0].index;
 }
 
 ui sink_pq(const ui i, priority_queue *pq) {
@@ -121,6 +121,10 @@ ui swim_pq(const ui i, priority_queue *pq) {
 
 void push_pq(const ui index, const ui priority, priority_queue *pq) {
     ui from, to;
+
+    if(pq->size == pq->bound) {
+        return;
+    }
 
     if(pq->size == pq->capacity) {
         resize_pq(pq);
