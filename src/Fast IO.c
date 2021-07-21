@@ -3,6 +3,16 @@
 
 #define ui unsigned int
 
+#ifdef  _WIN32
+#define gc _getchar_nolock
+#define pc _putchar_nolock
+#endif
+
+#ifdef  linux
+#define gc getchar_unlocked
+#define pc putchar_unlocked
+#endif
+
 int expect_int() {
     char ch;
     ui num;
@@ -12,7 +22,7 @@ int expect_int() {
     } while (ch != EOF && !isdigit(ch));
 
     if(ch == EOF) {
-        return -1;
+        return EOF;
     }
 
     num = 0;
@@ -31,7 +41,7 @@ int expect_char() {
         ch = gc();
     } while(ch != EOF && !isalpha(ch));
 
-    return (ch == EOF) ? -1 : ch;
+    return ch;
 }
 
 void print_int(const ui n) {
