@@ -1,4 +1,4 @@
-# Algorithm & Data Structures Project 2020/2021 (Graph Ranker) 
+# Algorithms & Data Structures Project 2020/2021 (Graph Ranker) 
 ## PoliMi (API 052509 Prof. D. Martinenghi)
 The codebase.c file contains the final submission which passed all the testcases within the memory and time limits, thus scoring the maximum amount of points (30L).
 ## **Problem Statement**
