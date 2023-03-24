@@ -1,5 +1,6 @@
 # Algorithm & Data Structures Project 2020/2021 (Graph Ranker) 
 ## PoliMi (API 052509 Prof. D. Martinenghi)
+The codebase.c file contains the final submission which passed all the testcases within the memory and time limits, thus scoring the maximum amount of points (30L).
 ## **Problem Statement**
 Write a **Graph Ranker**. 
 
@@ -90,7 +91,7 @@ It is specifically implemented to solve this problem. In fact, the elements are 
 `void pop_pq(priority_queue *pq)` : deletes the best node in the heap if it exists. (*Use this method for unbounded heaps*).
 
 ### **Graph Scoring**
-I use Dijkstra algorithm to find the shortest paths from node 0 to every other node. I use a min-heap as a priority queue. I keep track of the nodes that are currently inside the queue with the array `pushed`, so I only push a node if it's not already in the queue.
+I use Dijkstra's algorithm to find the shortest paths from node 0 to every other node. I use a min-heap as a priority queue. I keep track of the nodes that are currently inside the queue with the array `pushed`, so I only push a node if it's not already in the queue.
 
 To compute the score I sum every cell in the `distance` array, except the distances equal to `ULLIMAX`. 
 
